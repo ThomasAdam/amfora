@@ -6,7 +6,9 @@ package renderer
 
 import (
 	"fmt"
+	"log"
 	urlPkg "net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -95,13 +97,23 @@ func wrapLine(line string, width int, prefix, suffix string, includeFirst bool) 
 func convertRegularGemini(s string, numLinks, width int, proxied bool) (string, []string) {
 	links := make([]string, 0)
 	lines := strings.Split(s, "\n")
+	tableOfContents := make([]string, 0)
 	wrappedLines := make([]string, 0) // Final result
+
+	file, err := os.OpenFile("debug.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.SetOutput(file)
+
+	log.Printf("THOMAS: %s", s)
 
 	for i := range lines {
 		lines[i] = strings.TrimRight(lines[i], " \r\t\n")
 
 		if strings.HasPrefix(lines[i], "#") {
 			// Headings
+			tableOfContents = append(tableOfContents, lines[i] + "\n")
 			var tag string
 			if viper.GetBool("a-general.color") {
 				if strings.HasPrefix(lines[i], "###") {
@@ -266,6 +278,8 @@ func convertRegularGemini(s string, numLinks, width int, proxied bool) (string, 
 				"[-]", true)...)
 		}
 	}
+
+	log.Printf("%v", tableOfContents)
 
 	return strings.Join(wrappedLines, "\r\n"), links
 }
